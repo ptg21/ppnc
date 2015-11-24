@@ -37,6 +37,10 @@ For usage run:
 
 ```python ppnc.py --help```
 
+or
+
+```python ppnc_cella.py --help```
+
 Edit some of the files under config to fit your particular use case.
 
 - config/global_attrs.py # defines some of the metadata that is written
@@ -51,6 +55,18 @@ An example invocation of ppnc is as follows:
                    -s $STASH # STASH to restrict to \ 
                    --pgrid THETA # Pressure Grid \
                    -f /path/to/pp/files/*.pp # pp files to use
+
+An example invocation of ppnc_cella is as follows:
+
+    python ppnc_cella.py -j $JID # Model JobID \
+                         -a /path/to/model/orography # often called qrparm.orog \ 
+                         -p /path/to/output/files \ 
+                         -f /path/to/pp/files/${JID}a.pm${C}${N}${mon}.pp # Optional single pp-file to use if calculating grid-cell area
+
+Note that for ppnc_cella.py, a .pp file containing a single time-point should 
+be used if the gridcell volume is required. This file should contain air
+potential temperature (theta: m01s00i004). This script writes-out areacella
+and volcella files (if -f is specified).
 
 The submit_scripts folder contains some example bash scripts to create and 
 submit jobs on a system running LSF.

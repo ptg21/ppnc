@@ -21,6 +21,7 @@ __version__ = "$Id$"
 import os.path
 from datetime import datetime
 import uuid
+from tweakables import data_version
 
 class global_attrs():
 	def __init__(self, frequency, jobid, version):
@@ -68,7 +69,12 @@ class global_attrs():
 		self.attrs['creation_date'] = datetime.now().strftime('%Y-%m-%d-T%H:%M:%SZ')
 		self.attrs['tracking_id'] = str(uuid.uuid4())
 		self.attrs['history'] = 'Model jobid = %s. Created using Iris version %s. SSTs and Sea-Ice provided by HadGEM2-ES historical and RCP6.0 r2i1p1 ensemble member' %(jobid, version)
-		
+		self.attrs['table_id'] = 'Table '+self.freq_map[self.attrs['frequency']]+' (31 October 2014)'
+		if self.attrs['frequency'] is 'fx':
+			self.attrs['realization'] = 0
+			self.attrs['initialization_method'] = 0
+			self.attrs['physics_version'] = 0
+
 	def gen_dirname(self,variable_name):
 		#ESGF data node directory structure
 		#<activity>/<product>/<institute>/<model>/<experiment>/<frequency>/<modeling realm>/
@@ -83,22 +89,31 @@ class global_attrs():
 			self.attrs['frequency'], #<frequency>
 			self.attrs['modeling_realm'], #<modeling realm>
 			self.freq_map[self.attrs['frequency']], #<MIP table>
-			'r1i1p1', #<ensemble member>
-			'v1', #<version number>
+			'r'+str(self.attrs['realization'])+'i'+str(self.attrs['initialization_method'])+'p'+str(self.attrs['physics_version']), #<ensemble member>
+			'v'+str(data_version), #<version number>
 			variable_name #<variable name>
 			]
 		return os.path.join(dirname)
 	
-	def gen_filename(self,variable_name, temporal_subset):
+	def gen_filename(self,variable_name, temporal_subset=None):
 		#<variable name>_<MIP table>_<model>_<experiment>_<ensemble member>[_<temporal subset>][_<geographical info>].nc
-		filename = [
-			variable_name, #<variable name>
-			self.freq_map[self.attrs['frequency']], #<MIP table>
-			self.attrs['model_id'], #<model>
-			self.attrs['experiment_id'], #<experiment>
-			'r1i1p1', #<ensemble member>
-			temporal_subset, #[<temporal subset>]
-			]
+		if temporal_subset is not None:
+			filename = [
+				variable_name, #<variable name>
+				self.freq_map[self.attrs['frequency']], #<MIP table>
+				self.attrs['model_id'], #<model>
+				self.attrs['experiment_id'], #<experiment>
+				'r'+str(self.attrs['realization'])+'i'+str(self.attrs['initialization_method'])+'p'+str(self.attrs['physics_version']), #<ensemble member>
+				temporal_subset, #[<temporal subset>]
+				]
+		else:
+			filename = [
+				variable_name, #<variable name>
+				self.freq_map[self.attrs['frequency']], #<MIP table>
+				self.attrs['model_id'], #<model>
+				self.attrs['experiment_id'], #<experiment>
+				'r'+str(self.attrs['realization'])+'i'+str(self.attrs['initialization_method'])+'p'+str(self.attrs['physics_version']), #<ensemble member>
+				]
 		return ('_'.join(filename) + '.nc')
 
 
