@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License along 
 # with ppnc.  If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = "$Id$"
+__version__ = "$Rev: 8 $"
 
 import iris
 import numpy as np
@@ -29,53 +29,36 @@ import config.tweakables as tweakables
 
 def calc_area(lon,lat,radians=False):
     """
-    Calculates the area of a gridcell on the surface of a sphere. Assumed to be in degrees.
+    Calculates the area of a gridcell on the surface of a sphere. Assumed to be in degrees. Rather than passing in the lat and lon coordinates, instead pass-in the bounds of these coordinates.
     """
     # A = R^2 |sin(lat1)-sin(lat2)| |lon1-lon2| where R is earth radius (6371 kms)
     # A = R^2 * solid angle of latitude-longitude rectangle
     # polar rows (at +/-90) are treated differently.
     import numpy as np
     Pi=np.float128(3.141592653589793238462643383279)
-    Earth_Radius=np.float128(6371.0*1.0E3)
-    lat_bound = np.float128(89.999999999999999999999999)
+    Earth_Radius_Sq=(np.float128(6371.0*1.0E3))**2
     lon = np.float128(lon)
     lat = np.float128(lat)
     if (not radians):
-        rlon = (lon[:]/np.float128(180.0))*Pi
-        rlat = (lat[:]/np.float128(180.0))*Pi
+        rlon = (lon[:,:]/np.float128(180.0))*Pi
+        rlat = (lat[:,:]/np.float128(180.0))*Pi
     else:
-        rlon = lon[:]
-        rlat = lat[:]
-    dlat = (rlat[1] - rlat[0])/2.0
-    dlon = (rlon[1] - rlon[0])/2.0
+        rlon = lon[:,:]
+        rlat = lat[:,:]
     area = np.zeros((len(rlat),len(rlon)),np.float128)
     j=0
-    while j < len(rlat):
-        if (lat[j] >= lat_bound):
-            lat1 = rlat[j]
-            lat2 = rlat[j] - dlat  
-        elif (lat[j] <= -1.0*lat_bound):
-            lat1 = rlat[j] + dlat      
-            lat2 = rlat[j] 
-        else:
-            lat1 = rlat[j] + dlat
-            lat2 = rlat[j] - dlat
+    while j < len(rlat[:,0]):
         i=0
-        while i < len(rlon):
-            lon1 = rlon[i] - dlon
-            lon2 = rlon[i] + dlon
-            area[j,i] = (Earth_Radius**2)*(abs(np.sin(lat1)-np.sin(lat2))*abs(lon1-lon2))
+        while i < len(rlon[:,0]):
+            area[j,i] = (Earth_Radius_Sq)*(abs(np.sin(rlat[j,0])-np.sin(rlat[j,1]))*abs(rlon[i,0]-rlon[i,1]))
             i += 1
         j += 1
     del Pi
-    del Earth_Radius
-    del lat_bound
+    del Earth_Radius_Sq
     del lon
     del lat
     del rlon
     del rlat
-    del dlon
-    del dlat
     del i
     del j
     return area
@@ -168,7 +151,9 @@ def main(args):
                 raise ValueError('Only one time-point required for calculation of grid-cell volume')
 #
 # CALCULATE SURFACE AREA
-        sarea=calc_area(area.coord('longitude').points,area.coord('latitude').points)
+        # set lat/lon bounds
+        area=fix_coords(area)
+        sarea=calc_area(area.coord('longitude').bounds,area.coord('latitude').bounds)
         area.rename('areacella')
         area.long_name='Atmosphere Grid-Cell Area'
         area.standard_name='cell_area'
@@ -178,8 +163,6 @@ def main(args):
         # remove all cell_methods
         area.cell_methods=None
         del area.attributes['STASH']
-        # set lat/lon bounds
-        area=fix_coords(area)
 
         # add-in attributes to variable
         area.attributes['associated_files'] = "baseURL: http://www.met.reading.ac.uk/ccmi/ gridspecFile: gridspec_atmos_fx_UMUKCA-UCAM_refC2_r0i0p0.nc"
