@@ -212,7 +212,7 @@ def main(args):
             # lowest level compared to surface
             vol.data[0,:,:]=(alt.data[0,:,:]-orog.data[:,:])*area.data[:,:]
             # other levels compared to level below
-            for i in np.arange(1,60):
+            for i in np.arange(1,len(vol.coord('model_level_number').points)):
                 vol.data[i,:,:]=(alt.data[i,:,:]-alt.data[i-1,:,:])*area.data[:,:]
             vol.rename('cell_volume')
             vol.long_name='Atmosphere Grid-Cell Volume'
