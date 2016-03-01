@@ -68,6 +68,7 @@ def calc_area(lon,lat,radians=False):
 def get_opts_cella():
 	parser = argparse.ArgumentParser(description='Output areacella and volcella to NETCDF4')
 	parser.add_argument('-a','--orog',type=str, nargs=1, required=True, help='File containing model orography (surface altitude)')
+	parser.add_argument('-l','--land',type=str, nargs=1, required=True, help='File containing model land area fraction')
 	parser.add_argument('-f', '--file', type=str, nargs=1, default=None, help='Optional file containing theta (m01s00i004) for calculation of grid-cell volume. Single time-point only.')
 	parser.add_argument('-o','--outfile',type=str, nargs=1, default=None, help='Name of output file')
 	parser.add_argument('-p','--outprefix',type=str, nargs=1, default=[os.getcwd()], help='OUTPREFIX/outdir/outfile. Defaults to cwd')
@@ -144,6 +145,8 @@ def main(args):
         area  = loadPP_cella(file=args.orog,stash='m01s00i033')
         # model orography
         orog  = loadPP_cella(file=args.orog,stash='m01s00i033')
+        # land fraction
+        land  = loadPP_cella(file=args.land,stash='m01s00i505')
         # theta field - need 3D for volume calculation
         if args.file is not None:
             theta = loadPP_cella(file=args.file,stash='m01s00i004')
@@ -172,6 +175,51 @@ def main(args):
         # make sure there is a fill value
         area.data=np.ma.asarray(area.data,dtype='float32')
         np.ma.set_fill_value(area.data,tweakables.fillval)
+
+
+#
+# CALCULATE OROGRAPHY (SURFACE_ALTITUDE)
+        # set lat/lon bounds
+        orog=fix_coords(orog)
+        orog.data = np.float32(orog.data)
+        orog.rename('surface_altitude')
+        orog.long_name='Surface Altitude'
+        orog.standard_name='surface_altitude'
+        orog.var_name='orog'
+        # remove all cell_methods
+        orog.cell_methods=None
+        orog.attributes['cell_measures']='area: areacella'
+
+        # add-in attributes to variable
+        orog.attributes['associated_files'] = "baseURL: http://www.met.reading.ac.uk/ccmi/ gridspecFile: gridspec_atmos_fx_UMUKCA-UCAM_refC2_r0i0p0.nc"
+        orog.attributes['comment'] = 'height above the geoid; as defined here, ""the geoid"" is a surface of constant geopotential that, if the ocean were at rest, would coincide with mean sea level. Under this definition, the geoid changes as the mean volume of the ocean changes (e.g., due to glacial melt, or global warming of the ocean).  Report here the height above the present-day geoid.  Over ocean, report as 0.0'
+
+        # make sure there is a fill value
+        orog.data=np.ma.asarray(orog.data,dtype='float32')
+        np.ma.set_fill_value(orog.data,tweakables.fillval)
+
+#
+# CALCULATE LAND AREA FRACTION
+        # set lat/lon bounds
+        land=fix_coords(land)
+        land.long_name='Land Area Fraction'
+        land.data = 100.0*np.float32(land.data)
+        land.units = '%'
+        land.attributes['STASH'] = str(land.attributes['STASH'])+'*100.0'
+        # remove all cell_methods
+        land.cell_methods=None
+        land.attributes['cell_measures']='area: areacella'
+        land.var_name='sftlf'
+
+        # add-in attributes to variable
+        land.attributes['associated_files'] = "baseURL: http://www.met.reading.ac.uk/ccmi/ gridspecFile: gridspec_atmos_fx_UMUKCA-UCAM_refC2_r0i0p0.nc"
+        land.attributes['comment'] = "For atmospheres with more than 1 mesh (e.g., staggered grids), report areas that apply to surface vertical fluxes of energy."
+
+        # make sure there is a fill value
+        land.data=np.ma.asarray(land.data,dtype='float32')
+        np.ma.set_fill_value(land.data,tweakables.fillval)
+
+
 
         if args.file is not None:
             # CALCULATE CORRECT ALTITUDES
@@ -235,10 +283,14 @@ def main(args):
 	# nasty hack. Do this just before the last operations.
 	# May go away in newer iris versions - https://github.com/SciTools/iris/issues/1588
 	dict.__setitem__(area.attributes, 'missing_value', tweakables.fillval)
+	dict.__setitem__(orog.attributes, 'missing_value', tweakables.fillval)
+ 	dict.__setitem__(land.attributes, 'missing_value', tweakables.fillval)
         if args.file is not None:
             dict.__setitem__(vol.attributes, 'missing_value', tweakables.fillval)
 
 	save(args,cube=area,variable_name='areacella')
+	save(args,cube=orog,variable_name='orog')
+	save(args,cube=land,variable_name='sftlf')
         if args.file is not None:
             save(args,cube=vol,variable_name='volcella')
   
