@@ -59,14 +59,15 @@ An example invocation of ppnc is as follows:
 An example invocation of ppnc_cella is as follows:
 
     python ppnc_cella.py -j $JID # Model JobID \
-                         -a /path/to/model/orography # often called qrparm.orog \ 
+                         -a /path/to/model/orography # often called qrparm.orog \
+                         -l /path/to/model/land-fraction_file # often called qrparm.fracmask \
                          -p /path/to/output/files \ 
-                         -f /path/to/pp/files/${JID}a.pm${C}${N}${mon}.pp # Optional single pp-file to use if calculating grid-cell area
+                         -f /path/to/pp/files/${JID}a.pm${C}${N}${mon}.pp # Optional single pp-file to use if calculating grid-cell volume
 
 Note that for ppnc_cella.py, a .pp file containing a single time-point should 
 be used if the gridcell volume is required. This file should contain air
-potential temperature (theta: m01s00i004). This script writes-out areacella
-and volcella files (if -f is specified).
+potential temperature (theta: m01s00i004). This script writes out areacella, orog, sftlf,
+and "volcella" (if -f is specified) files.
 
 The submit_scripts folder contains some example bash scripts to create and 
 submit jobs on a system running LSF.
