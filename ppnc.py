@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with ppnc.  If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = "$Id$"
+__version__ = "$Format:%h$"
 
 import os
 import datetime
