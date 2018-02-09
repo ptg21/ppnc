@@ -22,7 +22,7 @@ import iris
 import numpy
 import config.tweakables as tweakables
 from config.req_data import req_data
-
+import cf_units
 
 class req():
     def __init__(self, STASH):
@@ -150,7 +150,7 @@ class req():
                                              standard_name='air_pressure',
                                              var_name='plev',
                                              attributes={'positive': 'down'},
-                                             units=iris.unit.Unit('Pa'))
+                                             units=cf_units.Unit('Pa'))
         latcoords = coords_to_float64(orig_cube.coords('latitude')[0])
         longcorrds = coords_to_float64(orig_cube.coords('longitude')[0])
 
@@ -158,7 +158,7 @@ class req():
         latcoords.var_name = 'lat'
         longcorrds.var_name = 'lon'
 
-        new_time_unit = iris.unit.Unit('days since 1960-01-01', calendar='360_day')
+        new_time_unit = cf_units.Unit('days since 1960-01-01', calendar='360_day')
 
         orig_cube.coords('time')[0].convert_units(new_time_unit)
         cube.add_dim_coord(orig_cube.coords('time')[0], 0)
