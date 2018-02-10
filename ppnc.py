@@ -86,7 +86,8 @@ def saveiris(args, cube, variable_name):
     saver = iris.fileformats.netcdf.Saver(filename=outpath, netcdf_format='NETCDF4_CLASSIC')
     saver.update_global_attributes(Conventions=iris.fileformats.netcdf.CF_CONVENTIONS_VERSION,
                                    attributes=ga.attrs)
-    saver.write(cube, local_keys=['comment', 'associated_files', 'coordinates', 'missing_value', 'conversion_factor', 'cell_measures', '_FillValue'])
+    saver.write(cube, local_keys=['comment', 'associated_files', 'coordinates', 'missing_value',\
+                                  'conversion_factor', 'cell_measures', '_FillValue'])
 
 
 def main(args):
@@ -98,18 +99,16 @@ def main(args):
     cubes = loadPP(args, reqd)
 
     #    convert stashes to those requested
-    mapfunction = partial(reqd.convert, args=args)
-    cubes = map(mapfunction, cubes)
-
-    # Convert to pressure levels
-    newdata = reqd.create_new_cubes(iris.cube.CubeList(cubes))
+    mapfunction = partial(reqd.convert, args=args) # creates a new function that only accepts args (ie tolerates missing args?)
+    cubes = map(mapfunction, cubes) # map works by applying function to every item of iterable and return a list of the results.
 
     # ValueError: 'missing_value' is not a permitted attribute
     # nasty hack. Do this just before the last operations.
     # May go away in newer iris versions - https://github.com/SciTools/iris/issues/1588
-    dict.__setitem__(newdata.attributes, 'missing_value', tweakables.fillval)
+    dict.__setitem__(cubes[0].attributes, 'missing_value', tweakables.fillval)
+    save(args, cube=cubes[0], variable_name=reqd.var_name)
 
-    save(args, cube=newdata, variable_name=reqd.var_name)
+    #save(args, cube=newdata, variable_name=reqd.var_name)
 
 
 if __name__ == "__main__":
